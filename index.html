@@ -1,0 +1,466 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Challenge OS</title>
+  <!-- نسخة جاهزة ومربوطة بمشروعك challenge-os-v1 -->
+
+
+<!-- Firebase SDK (الرابط الرسمي) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --bg:#f5f5f7;--surface:#fff;--ink:#1d1d1f;--sub:#6e6e73;--faint:#86868b;
+  --line:#e3e3e8;--lineSoft:#eeeef1;--accent:#0071e3;--accentSoft:#eef4ff;
+  --pos:#1a7f37;--danger:#d33;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,"Helvetica Neue",Arial,"Noto Kufi Arabic",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);font-family:var(--font);color:var(--ink)}
+button,input,select,textarea{font-family:inherit}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .7s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.center{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:26px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo .mark{width:42px;height:42px;border-radius:12px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:21px}
+.field{position:relative;margin-bottom:12px}
+.field input{width:100%;padding:12px 14px;border-radius:13px;border:1px solid var(--line);background:var(--bg);font-size:14px;outline:none;color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;font-weight:600}
+.btn-p{background:var(--accent);color:#fff}.btn-g{background:var(--bg);color:var(--ink)}.btn-d{background:var(--danger);color:#fff}
+.btn-block{width:100%;justify-content:center;padding:12px}
+.err{color:var(--danger);font-size:12.5px;margin-bottom:10px}
+.ok{color:var(--pos);font-size:12.5px;margin-bottom:10px}
+.shell{min-height:100vh;display:flex}
+.side{width:230px;background:var(--surface);border-left:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.nav{display:flex;flex-direction:column;gap:3px;flex:1;overflow:auto}
+.nav button{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;border:none;cursor:pointer;font-size:13.5px;text-align:right;color:var(--ink);background:transparent;width:100%}
+.nav button.on{color:var(--accent);background:var(--accentSoft);font-weight:600}
+.ic{width:18px;height:18px;flex:none}
+.main{flex:1;min-width:0}
+.top{background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:14px 28px;position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+.sync{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--pos)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--pos)}
+.content{padding:28px;max-width:1200px}
+h2.page{font-size:22px;font-weight:600;margin:0 0 4px}
+.muted{color:var(--faint);font-size:13px}
+.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;flex:1}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;flex:1 1 180px;min-width:0}
+.kpi .l{font-size:12.5px;color:var(--sub);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:25px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.tile{text-align:right;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;width:100%}
+.tile:hover{box-shadow:0 6px 22px rgba(0,0,0,.06)}
+.tile .icw{width:38px;height:38px;border-radius:11px;background:var(--accentSoft);display:flex;align-items:center;justify-content:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.panel .bar{padding:12px 14px;border-bottom:1px solid var(--lineSoft);display:flex;align-items:center;gap:10px}
+.search{position:relative;flex:1;max-width:280px}
+.search input{width:100%;padding:8px 32px 8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:13px;outline:none;color:var(--ink)}
+.scroll{overflow:auto;max-height:480px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:#fbfbfd;text-align:right;padding:11px 14px;font-weight:600;color:var(--sub);font-size:12px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+td{padding:10px 14px;border-bottom:1px solid var(--lineSoft);white-space:nowrap}
+tr:nth-child(even) td{background:#fcfcfd}
+.num{font-variant-numeric:tabular-nums}
+.rowact{display:flex;gap:8px}
+.iconbtn{border:none;background:transparent;cursor:pointer;color:var(--sub);padding:2px}
+.iconbtn.del{color:var(--danger)}
+.tag{font-size:12px;font-weight:600}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:var(--surface);border-radius:20px;width:100%;max-width:540px;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal .mh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--lineSoft);font-weight:600}
+.modal .mb{padding:22px}.modal .mf{padding:14px 22px;border-top:1px solid var(--lineSoft);display:flex;gap:10px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form .full{grid-column:1/-1}
+.form label{font-size:12.5px;color:var(--sub);display:block;margin-bottom:6px}
+.form input,.form select,.form textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#fbfbfd;font-size:14px;outline:none;color:var(--ink)}
+.qa{position:relative}
+.qa-menu{position:absolute;right:0;margin-top:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.1);min-width:190px;overflow:hidden;z-index:20}
+.qa-menu button{display:flex;align-items:center;gap:10px;width:100%;text-align:right;padding:11px 14px;border:none;background:transparent;cursor:pointer;font-size:13.5px;color:var(--ink)}
+.qa-menu button:hover{background:var(--bg)}
+.barrow{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:13px}
+.barrow .lbl{width:120px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bartrack{flex:1;height:14px;background:var(--lineSoft);border-radius:8px;overflow:hidden}
+.barfill{height:100%;background:var(--accent);border-radius:8px}
+.barrow .val{width:90px;text-align:left;font-variant-numeric:tabular-nums}
+.adminrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.adminbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.setup code{background:#f0f0f3;padding:2px 6px;border-radius:6px;font-size:12px}
+.setup ol{margin:10px 22px;line-height:1.9;font-size:13.5px}
+@media(max-width:760px){.side{width:64px}.nav button span,.logo .txt,.adminrow,.form{display:block}.form,.adminrow{grid-template-columns:1fr}.nav button span,.logo .txt{display:none}}
+</style>
+
+<div id="app"><div class="center"><div class="spin"></div></div></div>
+<div id="modal-root"></div>
+
+<script>
+/* ============================================================
+   ١) إعدادات Firebase — الصق إعداد مشروعك هنا (مرة واحدة)
+   من: Firebase Console ← ⚙️ Project settings ← Your apps ← Web
+   ============================================================ */
+var firebaseConfig = {
+  apiKey: "AIzaSyBvJ_CNV7b12kYB64cUbXriU-56R5COf0I",
+  authDomain: "challenge-os-v1.firebaseapp.com",
+  projectId: "challenge-os-v1",
+  storageBucket: "challenge-os-v1.firebasestorage.app",
+  messagingSenderId: "76701384719",
+  appId: "1:76701384719:web:b63d3b07b24454f0cde37a"
+};
+/* ============================================================ */
+
+var auth=null, fdb=null, session=null, route={page:"dashboard"};
+var ui={search:"",sort:null,sortdir:1,qaOpen:false};
+var DB={users:[],clients:[],projects:[],tasks:[],expenses:[],revenues:[],salaries:[],audit:[]};
+var unsubs=[];
+
+/* أدوات */
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function toNum(v){if(typeof v==="number")return v;if(v==null||v==="")return 0;var n=parseFloat(String(v).replace(/[^\d.\-]/g,""));return isNaN(n)?0:n;}
+function fmtCur(v){return toNum(v).toLocaleString("en-US",{maximumFractionDigits:3})+" ر.ع.";}
+function fmtNum(v){return toNum(v).toLocaleString("en-US",{maximumFractionDigits:2});}
+function fmtDate(v){if(!v)return "—";try{return new Date(v).toLocaleDateString("en-GB");}catch(e){return String(v);}}
+function tsMs(v){if(!v)return 0;if(v.seconds)return v.seconds*1000;var t=new Date(v).getTime();return isNaN(t)?0:t;}
+function fmtDT(v){var m=tsMs(v);return m?new Date(m).toLocaleString("en-GB"):"—";}
+
+/* الأدوار */
+var ROLES={ceo:"المدير التنفيذي",pm:"مدير مشاريع",designer:"مصمم",marketing:"تسويق",finance:"مالية",employee:"موظف"};
+var PAGES={
+  dashboard:{label:"الرئيسية",roles:["ceo","pm","designer","marketing","finance","employee"]},
+  clients:{label:"العملاء",roles:["ceo","pm","marketing","finance"],col:true},
+  projects:{label:"المشاريع",roles:["ceo","pm","designer","marketing"],col:true},
+  tasks:{label:"المهام",roles:["ceo","pm","designer","marketing","finance","employee"],col:true},
+  expenses:{label:"المصاريف",roles:["ceo","finance"],col:true},
+  revenues:{label:"الإيرادات",roles:["ceo","finance"],col:true},
+  salaries:{label:"الرواتب",roles:["ceo","finance"],col:true},
+  reports:{label:"التقارير",roles:["ceo","pm","finance","marketing"]},
+  users:{label:"المستخدمون",roles:["ceo"]},
+  admin:{label:"الإدارة والنسخ",roles:["ceo"]}
+};
+var CRUD={
+  clients:{create:["ceo","pm","marketing"],edit:["ceo","pm","marketing"],del:["ceo"]},
+  projects:{create:["ceo","pm"],edit:["ceo","pm"],del:["ceo"]},
+  tasks:{create:["ceo","pm","designer","marketing"],edit:["ceo","pm","designer","marketing"],del:["ceo","pm"]},
+  expenses:{create:["ceo","finance"],edit:["ceo","finance"],del:["ceo"]},
+  revenues:{create:["ceo","finance"],edit:["ceo","finance"],del:["ceo"]},
+  salaries:{create:["ceo","finance"],edit:["ceo","finance"],del:["ceo"]}
+};
+function can(r,p){return PAGES[p]&&PAGES[p].roles.indexOf(r)>-1;}
+function canDo(r,k,a){return CRUD[k]&&CRUD[k][a].indexOf(r)>-1;}
+
+var SEL=function(){return {type:"select",options:[].slice.call(arguments)};};
+var COLLECTIONS={
+  clients:{label:"العملاء",singular:"عميل",icon:"users",fields:[
+    {name:"name",label:"اسم العميل",type:"text",req:1},{name:"industry",label:"المجال",type:"text"},
+    {name:"contact",label:"جهة الاتصال",type:"text"},{name:"phone",label:"الهاتف",type:"text"},
+    {name:"email",label:"البريد",type:"text"},Object.assign({name:"status",label:"الحالة"},SEL("نشط","متوقف","محتمل")),
+    {name:"value",label:"القيمة التعاقدية",type:"currency"}]},
+  projects:{label:"المشاريع",singular:"مشروع",icon:"brief",fields:[
+    {name:"name",label:"اسم المشروع",type:"text",req:1},{name:"clientName",label:"العميل",type:"text"},
+    Object.assign({name:"type",label:"النوع"},SEL("هوية","ريتينر","حملة","محتوى","أخرى")),
+    Object.assign({name:"status",label:"الحالة"},SEL("جديد","قيد التنفيذ","مراجعة","مكتمل","متوقف")),
+    {name:"manager",label:"مدير المشروع",type:"text"},{name:"startDate",label:"تاريخ البدء",type:"date"},
+    {name:"deadline",label:"الموعد النهائي",type:"date"},{name:"budget",label:"الميزانية",type:"currency"}]},
+  tasks:{label:"المهام",singular:"مهمة",icon:"check",fields:[
+    {name:"title",label:"المهمة",type:"text",req:1},{name:"projectName",label:"المشروع",type:"text"},
+    {name:"assignee",label:"المسؤول",type:"text"},Object.assign({name:"status",label:"الحالة"},SEL("جديدة","قيد التنفيذ","مكتملة")),
+    Object.assign({name:"priority",label:"الأولوية"},SEL("عادية","عالية","عاجلة")),{name:"dueDate",label:"تاريخ الاستحقاق",type:"date"}]},
+  expenses:{label:"المصاريف",singular:"مصروف",icon:"down",fields:[
+    {name:"title",label:"البند",type:"text",req:1},Object.assign({name:"category",label:"التصنيف"},SEL("تشغيلي","رواتب","تسويق","معدات","أخرى")),
+    {name:"amount",label:"المبلغ",type:"currency",req:1},{name:"date",label:"التاريخ",type:"date"},
+    {name:"paidTo",label:"المدفوع لـ",type:"text"},{name:"notes",label:"ملاحظات",type:"textarea"}]},
+  revenues:{label:"الإيرادات",singular:"إيراد",icon:"up",fields:[
+    {name:"title",label:"البند",type:"text",req:1},{name:"clientName",label:"العميل",type:"text"},
+    {name:"amount",label:"المبلغ",type:"currency",req:1},{name:"date",label:"التاريخ",type:"date"},
+    Object.assign({name:"method",label:"طريقة الدفع"},SEL("تحويل","نقدي","شيك","بطاقة")),{name:"notes",label:"ملاحظات",type:"textarea"}]},
+  salaries:{label:"الرواتب",singular:"راتب",icon:"wallet",fields:[
+    {name:"employeeName",label:"الموظف",type:"text",req:1},{name:"month",label:"الشهر",type:"text"},
+    {name:"baseSalary",label:"الراتب الأساسي",type:"currency",req:1},{name:"bonus",label:"مكافآت",type:"currency"},
+    {name:"deductions",label:"خصومات",type:"currency"},Object.assign({name:"status",label:"الحالة"},SEL("مستحق","مدفوع"))]}
+};
+var ICONMAP={dashboard:"dash",clients:"users",projects:"brief",tasks:"check",expenses:"down",revenues:"up",salaries:"wallet",reports:"report",users:"usercog",admin:"shield"};
+function svg(name,color){color=color||"currentColor";var p={
+  dash:'<path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>',
+  users:'<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0112 0M16 11a3 3 0 100-6"/>',
+  brief:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/>',
+  check:'<path d="M9 11l3 3 8-8"/><path d="M21 12v6a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2h11"/>',
+  down:'<path d="M3 7l9 9 4-4 5 5"/><path d="M21 17v-4h-4"/>',up:'<path d="M3 17l9-9 4 4 5-5"/><path d="M21 7v4h-4"/>',
+  wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 12h3"/>',
+  report:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 16v-4M12 16V8M16 16v-6"/>',
+  usercog:'<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0110 0M18 13v6M15 16h6"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  logout:'<path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>',
+  sort:'<path d="M8 9l4-4 4 4M16 15l-4 4-4-4"/>',pencil:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
+  trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  chev:'<path d="M15 6l-6 6 6 6"/>',download:'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+  upload:'<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',history:'<path d="M3 12a9 9 0 109-9 9 9 0 00-7 3.5M3 3v4h4M12 7v5l3 2"/>'
+  };return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(p[name]||"")+'</svg>';}
+
+/* ============ طبقة البيانات (Firestore لحظي) ============ */
+function startListeners(){
+  stopListeners();
+  var keys=Object.keys(COLLECTIONS).filter(function(k){return can(session.role,k);});
+  if(session.role==="ceo"){keys.push("users");keys.push("audit");}
+  keys.forEach(function(k){
+    var u=fdb.collection(k).onSnapshot(function(snap){
+      var arr=[];snap.forEach(function(d){arr.push(Object.assign({id:d.id},d.data()));});
+      arr.sort(function(a,b){return tsMs(b.createdAt)-tsMs(a.createdAt);});
+      DB[k]=arr; if(session)render();
+    },function(err){console.warn("listener",k,err.message);});
+    unsubs.push(u);
+  });
+}
+function stopListeners(){unsubs.forEach(function(u){try{u();}catch(e){}});unsubs=[];}
+
+function logAudit(action,key,item){
+  return fdb.collection("audit").add({
+    action:action,col:key,summary:(item&&(item.name||item.title||item.employeeName))||"",
+    user:session?session.name:"—",role:session?session.role:"—",
+    at:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(){});
+}
+function addItem(key,data){
+  data.createdAt=firebase.firestore.FieldValue.serverTimestamp();data.createdBy=session.uid;
+  return fdb.collection(key).add(data).then(function(){logAudit("create",key,data);});
+}
+function editItem(key,id,data){
+  data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+  return fdb.collection(key).doc(id).update(data).then(function(){logAudit("update",key,data);});
+}
+function delItem(key,id){
+  var x=(DB[key]||[]).find(function(r){return r.id===id;});
+  return fdb.collection(key).doc(id).delete().then(function(){logAudit("delete",key,x||{});});
+}
+
+/* ============ المصادقة ============ */
+function initAuth(){
+  auth.onAuthStateChanged(function(user){
+    if(user){
+      fdb.collection("users").doc(user.uid).get().then(function(doc){
+        if(doc.exists&&doc.data().active!==false){
+          var d=doc.data();session={uid:user.uid,name:d.name||user.email,role:d.role||"employee",email:user.email};
+          route={page:"dashboard"};startListeners();render();
+        }else{auth.signOut();session=null;render(true,"حسابك غير مفعّل أو غير معرّف. راجع المدير التنفيذي.");}
+      }).catch(function(e){auth.signOut();session=null;render(true,"تعذّر تحميل بيانات الحساب: "+e.message);});
+    }else{session=null;stopListeners();render();}
+  });
+}
+function logout(){stopListeners();auth.signOut();}
+
+/* ============ الرندر ============ */
+function render(loginErr,msg){
+  var app=document.getElementById("app");
+  if(!firebaseReady()){app.innerHTML=setupView();return;}
+  if(!session){app.innerHTML=loginView(msg);bindLogin();return;}
+  app.innerHTML=shellView(pageView());bindShell();
+}
+function firebaseReady(){return typeof firebase!=="undefined"&&firebaseConfig.apiKey.indexOf("PASTE")===-1&&auth&&fdb;}
+
+function setupView(){
+  var noSdk=(typeof firebase==="undefined");
+  return '<div class="center"><div style="width:100%;max-width:560px">'
+    +'<div class="logo" style="justify-content:center;margin-bottom:24px"><div class="mark">C</div><div class="txt"><div style="font-weight:600;font-size:15px">Challenge OS</div><div style="font-size:10.5px;color:var(--faint)">إعداد أولي</div></div></div>'
+    +'<div class="card setup">'
+    +(noSdk?'<div class="err">⚠ تعذّر تحميل Firebase. داخل معاينة كلود هذا متوقع — <b>نزّل الملف وافتحه في متصفحك</b> ليعمل.</div>':'')
+    +'<div style="font-size:16px;font-weight:600;margin-bottom:8px">خطوات التشغيل (مرة واحدة، بدون أوامر)</div>'
+    +'<ol>'
+    +'<li>أنشئ مشروع في <code>console.firebase.google.com</code></li>'
+    +'<li>فعّل <b>Authentication ← Email/Password</b></li>'
+    +'<li>أنشئ <b>Firestore Database</b> (Production)</li>'
+    +'<li>من <b>Project settings ← Web app</b> انسخ <code>firebaseConfig</code> والصقه أعلى هذا الملف</li>'
+    +'<li>أنشئ أول مدير: <b>Authentication ← Add user</b>، ثم في <b>Firestore</b> أنشئ مجموعة <code>users</code> ومستند بنفس الـ UID فيه <code>name</code> و <code>role:"ceo"</code> و <code>active:true</code></li>'
+    +'<li>افتح الملف أو ارفعه على أي استضافة ثابتة</li>'
+    +'</ol>'
+    +'<div class="muted">التفاصيل الكاملة وقواعد الحماية موجودة في الرسالة المرفقة بالمحادثة.</div>'
+    +'</div></div></div>';
+}
+function loginView(msg){
+  return '<div class="center"><div style="width:100%;max-width:380px">'
+    +'<div class="logo" style="justify-content:center;margin-bottom:28px"><div class="mark">C</div><div class="txt"><div style="font-weight:600;font-size:15px">Challenge OS</div><div style="font-size:10.5px;color:var(--faint)">نظام إدارة الوكالة</div></div></div>'
+    +'<div class="card">'
+    +'<div style="font-size:18px;font-weight:600;text-align:center;margin-bottom:20px">تسجيل الدخول</div>'
+    +'<div class="field"><input id="lu" type="email" placeholder="البريد الإلكتروني"></div>'
+    +'<div class="field"><input id="lp" type="password" placeholder="كلمة المرور"></div>'
+    +'<div style="text-align:left;margin-bottom:12px"><button id="lreset" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:12.5px">نسيت كلمة المرور؟</button></div>'
+    +(msg?'<div class="err">'+esc(msg)+'</div>':'')+'<div id="lerr" class="err" style="display:none"></div><div id="lok" class="ok" style="display:none"></div>'
+    +'<button class="btn btn-p btn-block" id="lbtn">دخول</button>'
+    +'</div><div style="text-align:center;font-size:11px;color:var(--faint);margin-top:16px">Challenge Creative House · 2026</div></div></div>';
+}
+function bindLogin(){
+  var b=document.getElementById("lbtn"),u=document.getElementById("lu"),p=document.getElementById("lp"),e=document.getElementById("lerr"),ok=document.getElementById("lok"),rs=document.getElementById("lreset");
+  function go(){e.style.display="none";b.textContent="...";auth.signInWithEmailAndPassword(u.value.trim(),p.value).catch(function(err){b.textContent="دخول";e.style.display="block";e.textContent="بيانات الدخول غير صحيحة.";});}
+  b.onclick=go;p.onkeydown=function(ev){if(ev.key==="Enter")go();};
+  rs.onclick=function(){if(!u.value.trim()){e.style.display="block";e.textContent="اكتب بريدك أولًا.";return;}auth.sendPasswordResetEmail(u.value.trim()).then(function(){ok.style.display="block";ok.textContent="أُرسل رابط الاسترجاع إلى بريدك.";e.style.display="none";}).catch(function(){e.style.display="block";e.textContent="تعذّر الإرسال.";});};
+}
+function shellView(inner){
+  var nav=Object.keys(PAGES).filter(function(k){return can(session.role,k);}).map(function(k){
+    var on=route.page===k?" on":"";return '<button data-nav="'+k+'" class="'+on.trim()+'">'+svg(ICONMAP[k],route.page===k?"var(--accent)":"var(--sub)")+'<span>'+PAGES[k].label+'</span></button>';
+  }).join("");
+  return '<div class="shell"><aside class="side"><div class="logo" style="padding:0 6px 20px"><div class="mark" style="width:28px;height:28px;font-size:14px;border-radius:8px">C</div><div class="txt"><div style="font-weight:600;font-size:15px">Challenge OS</div><div style="font-size:10.5px;color:var(--faint)">نظام إدارة الوكالة</div></div></div>'
+    +'<nav class="nav">'+nav+'</nav>'
+    +'<button data-logout style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;border:none;cursor:pointer;font-size:13px;color:var(--sub);background:transparent;margin-top:8px">'+svg("logout","var(--sub)")+'<span>تسجيل الخروج</span></button></aside>'
+    +'<main class="main"><header class="top">'+quickAddView()
+    +'<div style="display:flex;align-items:center;gap:16px"><div class="sync"><span class="dot"></span>مزامنة حية</div>'
+    +'<div style="display:flex;align-items:center;gap:10px"><div style="text-align:left"><div style="font-size:13px;font-weight:600">'+esc(session.name)+'</div><div style="font-size:11px;color:var(--faint)">'+ROLES[session.role]+'</div></div><div class="avatar">'+esc(session.name.charAt(0))+'</div></div></div>'
+    +'</header><div class="content">'+inner+'</div></main></div>';
+}
+function quickAddView(){
+  var items=[];
+  if(canDo(session.role,"clients","create"))items.push(['clients','عميل جديد','users']);
+  if(canDo(session.role,"projects","create"))items.push(['projects','مشروع جديد','brief']);
+  if(session.role==="ceo")items.push(['users','موظف جديد','usercog']);
+  if(!items.length)return '<div></div>';
+  var menu=ui.qaOpen?'<div class="qa-menu">'+items.map(function(it){return '<button data-qa="'+it[0]+'">'+svg(it[2],"var(--accent)")+it[1]+'</button>';}).join("")+'</div>':"";
+  return '<div class="qa"><button class="btn btn-p" data-qatoggle>'+svg("plus","#fff")+'إضافة جديد</button>'+menu+'</div>';
+}
+
+function pageView(){
+  var p=route.page;
+  if(p==="dashboard")return dashboardView();
+  if(p==="reports")return reportsView();
+  if(p==="users")return usersView();
+  if(p==="admin")return adminView();
+  if(COLLECTIONS[p])return collectionView(p);
+  return '<div class="muted">صفحة غير معروفة.</div>';
+}
+function dashboardView(){
+  var keys=Object.keys(COLLECTIONS).filter(function(k){return can(session.role,k);});
+  var cards=keys.map(function(k){
+    var rows=DB[k]||[];var cur=COLLECTIONS[k].fields.filter(function(f){return f.type==="currency";});
+    var val=rows.reduce(function(a,r){return a+cur.reduce(function(s,f){return s+toNum(r[f.name]);},0);},0);
+    return '<button class="tile" data-nav="'+k+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div class="icw">'+svg(ICONMAP[k],"var(--accent)")+'</div>'+svg("chev","var(--faint)")+'</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">'+COLLECTIONS[k].label+'</div><div class="muted" style="font-size:12.5px">'+rows.length+' سجل</div>'+(val>0?'<div style="font-size:17px;font-weight:600;margin-top:8px" class="num">'+fmtCur(val)+'</div>':'')+'</button>';
+  }).join("");
+  return '<h2 class="page">الرئيسية</h2><p class="muted" style="margin:0 0 22px">نظرة عامة على أقسامك — تتحدّث لحظيًا</p><div class="grid">'+cards+'</div>';
+}
+function collectionView(key){
+  if(!can(session.role,key))return '<div style="color:var(--danger)">لا تملك صلاحية الوصول لهذا القسم.</div>';
+  var cfg=COLLECTIONS[key],rows=(DB[key]||[]).slice();
+  var cur=cfg.fields.filter(function(f){return f.type==="currency";});
+  var kpis='<div class="kpi"><div class="l">عدد السجلات</div><div class="v">'+rows.length.toLocaleString("en-US")+'</div></div>';
+  cur.slice(0,3).forEach(function(f){var s=rows.reduce(function(a,r){return a+toNum(r[f.name]);},0);kpis+='<div class="kpi"><div class="l">إجمالي '+esc(f.label)+'</div><div class="v">'+fmtCur(s)+'</div></div>';});
+  var mayC=canDo(session.role,key,"create"),mayE=canDo(session.role,key,"edit"),mayD=canDo(session.role,key,"del");
+  var addBtn=mayC?'<button class="btn btn-p" data-add="'+key+'" style="white-space:nowrap;margin-right:14px">'+svg("plus","#fff")+'إضافة '+cfg.singular+'</button>':'';
+  if(ui.search){var q=ui.search.toLowerCase();rows=rows.filter(function(r){return cfg.fields.some(function(f){return String(r[f.name]==null?"":r[f.name]).toLowerCase().indexOf(q)>-1;});});}
+  if(ui.sort){var sf=cfg.fields.find(function(x){return x.name===ui.sort;});var isn=sf&&(sf.type==="currency"||sf.type==="number");rows.sort(function(a,b){return isn?(toNum(a[ui.sort])-toNum(b[ui.sort]))*ui.sortdir:String(a[ui.sort]==null?"":a[ui.sort]).localeCompare(String(b[ui.sort]==null?"":b[ui.sort]),"ar")*ui.sortdir;});}
+  var head=cfg.fields.map(function(f){return '<th data-sort="'+f.name+'"><span style="display:inline-flex;align-items:center;gap:5px">'+esc(f.label)+svg("sort",ui.sort===f.name?"var(--accent)":"var(--faint)")+'</span></th>';}).join("");
+  if(mayE||mayD)head+='<th></th>';
+  var body=rows.map(function(r){
+    var tds=cfg.fields.map(function(f){var v=r[f.name],d;if(v==null||v==="")d='<span style="color:var(--faint)">—</span>';else if(f.type==="currency")d=fmtCur(v);else if(f.type==="number")d=fmtNum(v);else if(f.type==="date")d=fmtDate(v);else d=esc(v);return '<td class="'+((f.type==="currency"||f.type==="number")?"num":"")+'">'+d+'</td>';}).join("");
+    if(mayE||mayD)tds+='<td><div class="rowact">'+(mayE?'<button class="iconbtn" data-edit="'+key+'|'+r.id+'">'+svg("pencil")+'</button>':'')+(mayD?'<button class="iconbtn del" data-del="'+key+'|'+r.id+'">'+svg("trash")+'</button>':'')+'</div></td>';
+    return '<tr>'+tds+'</tr>';
+  }).join("");
+  if(!rows.length)body='<tr><td colspan="'+(cfg.fields.length+1)+'" style="padding:28px;text-align:center;color:var(--faint)">لا توجد سجلات</td></tr>';
+  return '<h2 class="page" style="margin-bottom:22px">'+cfg.label+'</h2><div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="kpis">'+kpis+'</div>'+addBtn+'</div>'
+    +'<div class="panel"><div class="bar"><div class="search">'+svg("search","var(--faint)").replace('class="ic"','class="ic" style="position:absolute;right:10px;top:50%;transform:translateY(-50%)"')+'<input id="srch" placeholder="بحث…" value="'+esc(ui.search)+'"></div><div style="font-size:12px;color:var(--faint)">'+rows.length+' سجل</div></div><div class="scroll"><table><thead><tr>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div></div>';
+}
+function reportsView(){
+  if(!can(session.role,"reports"))return '<div style="color:var(--danger)">لا تملك صلاحية الوصول للتقارير.</div>';
+  var fin=can(session.role,"revenues");
+  var rev=fin?DB.revenues.reduce(function(a,r){return a+toNum(r.amount);},0):0;
+  var exp=fin?DB.expenses.reduce(function(a,r){return a+toNum(r.amount);},0):0;
+  var sal=fin?DB.salaries.reduce(function(a,r){return a+toNum(r.baseSalary)+toNum(r.bonus)-toNum(r.deductions);},0):0;
+  var kpis=fin?'<div class="kpis"><div class="kpi"><div class="l">إجمالي الإيرادات</div><div class="v">'+fmtCur(rev)+'</div></div><div class="kpi"><div class="l">إجمالي المصاريف</div><div class="v">'+fmtCur(exp)+'</div></div><div class="kpi"><div class="l">إجمالي الرواتب</div><div class="v">'+fmtCur(sal)+'</div></div><div class="kpi"><div class="l">صافي الربح</div><div class="v">'+fmtCur(rev-exp-sal)+'</div></div></div>':"";
+  var byst={};(DB.projects||[]).forEach(function(p){var s=p.status||"—";byst[s]=(byst[s]||0)+1;});
+  var arr=Object.keys(byst).map(function(k){return {name:k,value:byst[k]};});
+  var max=Math.max(1,Math.max.apply(null,arr.map(function(x){return x.value;}).concat([0])));
+  var bars=arr.length?arr.map(function(x){return '<div class="barrow"><div class="lbl">'+esc(x.name)+'</div><div class="bartrack"><div class="barfill" style="width:'+(x.value/max*100)+'%"></div></div><div class="val num">'+x.value+'</div></div>';}).join(""):'<div class="muted">لا توجد مشاريع بعد.</div>';
+  return '<h2 class="page" style="margin-bottom:22px">التقارير</h2>'+kpis+'<div class="panel" style="padding:20px"><div style="font-size:14px;font-weight:600;margin-bottom:14px">المشاريع حسب الحالة</div>'+bars+'</div>';
+}
+function usersView(){
+  if(session.role!=="ceo")return '<div style="color:var(--danger)">هذه الصفحة للمدير التنفيذي فقط.</div>';
+  var rows=DB.users.map(function(u){return '<tr><td>'+esc(u.name)+'</td><td style="color:var(--sub)">'+esc(u.email)+'</td><td>'+(ROLES[u.role]||u.role)+'</td><td><span class="tag" style="color:'+(u.active!==false?"var(--pos)":"var(--faint)")+'">'+(u.active!==false?"نشط":"موقوف")+'</span></td><td><div class="rowact">'+(u.id!==session.uid?'<button class="iconbtn" data-utoggle="'+u.id+'">'+(u.active!==false?"إيقاف":"تفعيل")+'</button>':'')+'</div></td></tr>';}).join("");
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px"><h2 class="page" style="margin:0">المستخدمون</h2><button class="btn btn-p" data-uadd>'+svg("usercog","#fff")+'موظف جديد</button></div><div class="panel"><div class="scroll"><table><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
+function adminView(){
+  if(session.role!=="ceo")return '<div style="color:var(--danger)">هذه الصفحة للمدير التنفيذي فقط.</div>';
+  var logs=(DB.audit||[]).slice(0,100).map(function(l){var a={create:"إضافة",update:"تعديل",delete:"حذف"}[l.action]||l.action;return '<tr><td>'+a+'</td><td>'+esc(l.col)+'</td><td style="color:var(--sub)">'+esc(l.summary||"—")+'</td><td>'+esc(l.user)+'</td><td style="color:var(--faint)">'+fmtDT(l.at)+'</td></tr>';}).join("")||'<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--faint)">لا يوجد سجل بعد.</td></tr>';
+  return '<h2 class="page" style="margin-bottom:22px">الإدارة والنسخ الاحتياطي</h2><div class="adminrow"><div class="adminbox"><div style="font-weight:600;margin-bottom:10px">نسخة احتياطية</div><p class="muted" style="margin:0 0 14px">تنزيل كل البيانات كملف JSON.</p><button class="btn btn-p" data-backup>'+svg("download","#fff")+'تنزيل النسخة</button></div><div class="adminbox"><div style="font-weight:600;margin-bottom:10px">مزامنة سحابية</div><p class="muted" style="margin:0">كل التعديلات تُحفظ تلقائيًا في السحابة وتظهر فورًا على كل الأجهزة. لا حاجة لزر حفظ.</p></div></div><div class="panel"><div class="bar" style="font-weight:600">'+svg("history","var(--accent)")+'سجل التعديلات (آخر 100)</div><div class="scroll"><table><thead><tr><th>الإجراء</th><th>القسم</th><th>الوصف</th><th>المستخدم</th><th>الوقت</th></tr></thead><tbody>'+logs+'</tbody></table></div></div>';
+}
+
+/* النماذج */
+function openForm(key,id){
+  var cfg=COLLECTIONS[key],rec=id?(DB[key].find(function(r){return r.id===id;})||{}):{};
+  var inputs=cfg.fields.map(function(f){
+    var val=rec[f.name]==null?"":rec[f.name],full=f.type==="textarea"?" full":"",ctrl;
+    if(f.type==="select")ctrl='<select data-f="'+f.name+'"><option value="">—</option>'+f.options.map(function(o){return '<option '+(val===o?"selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select>';
+    else if(f.type==="textarea")ctrl='<textarea data-f="'+f.name+'" rows="3">'+esc(val)+'</textarea>';
+    else{var t=f.type==="date"?"date":(f.type==="currency"||f.type==="number")?"number":"text";ctrl='<input data-f="'+f.name+'" type="'+t+'" value="'+esc(val)+'">';}
+    return '<div class="'+full.trim()+'"><label>'+esc(f.label)+(f.req?' <span style="color:var(--danger)">*</span>':'')+'</label>'+ctrl+'</div>';
+  }).join("");
+  showModal((id?"تعديل ":"إضافة ")+cfg.singular,'<div class="form">'+inputs+'</div>',function(root,done){
+    var data={};cfg.fields.forEach(function(f){var el=root.querySelector('[data-f="'+f.name+'"]');var v=el?el.value:"";if(f.type==="currency"||f.type==="number")v=v===""?"":toNum(v);data[f.name]=v;});
+    var req=cfg.fields.filter(function(f){return f.req;});
+    for(var i=0;i<req.length;i++){if(data[req[i].name]===""||data[req[i].name]==null){alert("أكمل الحقول المطلوبة (*)");return;}}
+    var op=id?editItem(key,id,data):addItem(key,data);
+    op.then(function(){done();}).catch(function(e){alert("خطأ: "+e.message);});
+  });
+}
+function openUserForm(){
+  var roleOpts=Object.keys(ROLES).map(function(k){return '<option value="'+k+'">'+ROLES[k]+'</option>';}).join("");
+  var body='<div class="form"><div><label>الاسم</label><input data-f="name"></div><div><label>البريد الإلكتروني</label><input data-f="email" type="email"></div><div><label>كلمة المرور المبدئية</label><input data-f="password"></div><div><label>الدور</label><select data-f="role">'+roleOpts+'</select></div></div>';
+  showModal("إضافة موظف جديد",body,function(root,done){
+    var name=root.querySelector('[data-f="name"]').value.trim();
+    var email=root.querySelector('[data-f="email"]').value.trim();
+    var pw=root.querySelector('[data-f="password"]').value;
+    var role=root.querySelector('[data-f="role"]').value;
+    if(!name||!email||pw.length<6){alert("أكمل البيانات (كلمة المرور 6 خانات على الأقل).");return;}
+    // تطبيق ثانوي حتى لا يخرج المدير من حسابه
+    var sec=firebase.initializeApp(firebaseConfig,"sec"+Date.now());
+    sec.auth().createUserWithEmailAndPassword(email,pw).then(function(cred){
+      return fdb.collection("users").doc(cred.user.uid).set({name:name,email:email,role:role,active:true,createdBy:session.uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()})
+        .then(function(){return sec.auth().signOut();})
+        .then(function(){logAudit("create","users",{name:name});done();});
+    }).catch(function(e){alert(e.code==="auth/email-already-in-use"?"البريد مستخدم مسبقًا.":"خطأ: "+e.message);})
+      .then(function(){sec.delete();});
+  });
+}
+function showModal(title,bodyHtml,onSave){
+  var mr=document.getElementById("modal-root");
+  mr.innerHTML='<div class="overlay"><div class="modal"><div class="mh"><span>'+esc(title)+'</span><button class="iconbtn" data-close>'+svg("x")+'</button></div><div class="mb">'+bodyHtml+'</div><div class="mf"><button class="btn btn-p" data-save>حفظ</button><button class="btn btn-g" data-close>إلغاء</button></div></div></div>';
+  var root=mr.querySelector(".modal");function close(){mr.innerHTML="";}
+  mr.querySelector(".overlay").addEventListener("click",function(e){if(e.target.classList.contains("overlay"))close();});
+  Array.prototype.forEach.call(mr.querySelectorAll("[data-close]"),function(b){b.onclick=close;});
+  var sv=mr.querySelector("[data-save]");
+  sv.onclick=function(){sv.textContent="...";sv.disabled=true;onSave(root,function(){close();});setTimeout(function(){if(sv){sv.textContent="حفظ";sv.disabled=false;}},1500);};
+}
+function confirmDelete(text,cb){
+  var mr=document.getElementById("modal-root");
+  mr.innerHTML='<div class="overlay"><div class="modal" style="max-width:420px"><div class="mh"><span>تأكيد الحذف</span></div><div class="mb"><div class="muted" style="font-size:14px">'+esc(text)+'</div></div><div class="mf"><button class="btn btn-d" data-yes>حذف نهائي</button><button class="btn btn-g" data-no>إلغاء</button></div></div></div>';
+  mr.querySelector("[data-no]").onclick=function(){mr.innerHTML="";};
+  mr.querySelector("[data-yes]").onclick=function(){mr.innerHTML="";cb();};
+}
+function doBackup(){
+  var keys=["users","clients","projects","tasks","expenses","revenues","salaries","audit"];
+  Promise.all(keys.map(function(k){return fdb.collection(k).get().then(function(s){var a=[];s.forEach(function(d){a.push(Object.assign({id:d.id},d.data()));});return [k,a];}).catch(function(){return [k,[]];});}))
+  .then(function(pairs){var out={};pairs.forEach(function(p){out[p[0]]=p[1];});var blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="challenge-os-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();});
+}
+
+function bindShell(){
+  var app=document.getElementById("app");
+  Array.prototype.forEach.call(app.querySelectorAll("[data-nav]"),function(b){b.onclick=function(){route.page=b.getAttribute("data-nav");ui.search="";ui.sort=null;ui.qaOpen=false;render();};});
+  var lo=app.querySelector("[data-logout]");if(lo)lo.onclick=logout;
+  var qt=app.querySelector("[data-qatoggle]");if(qt)qt.onclick=function(e){e.stopPropagation();ui.qaOpen=!ui.qaOpen;render();};
+  Array.prototype.forEach.call(app.querySelectorAll("[data-qa]"),function(b){b.onclick=function(){var k=b.getAttribute("data-qa");ui.qaOpen=false;if(k==="users"){route.page="users";render();openUserForm();}else{route.page=k;render();openForm(k,null);}};});
+  Array.prototype.forEach.call(app.querySelectorAll("[data-add]"),function(b){b.onclick=function(){openForm(b.getAttribute("data-add"),null);};});
+  Array.prototype.forEach.call(app.querySelectorAll("[data-edit]"),function(b){b.onclick=function(){var p=b.getAttribute("data-edit").split("|");openForm(p[0],p[1]);};});
+  Array.prototype.forEach.call(app.querySelectorAll("[data-del]"),function(b){b.onclick=function(){var p=b.getAttribute("data-del").split("|");confirmDelete("متأكد من حذف هذا السجل؟ لا يمكن التراجع.",function(){delItem(p[0],p[1]).catch(function(e){alert("خطأ: "+e.message);});});};});
+  var s=app.querySelector("#srch");if(s)s.oninput=function(){ui.search=s.value;var pos=s.selectionStart;render();var ns=document.getElementById("srch");if(ns){ns.focus();try{ns.setSelectionRange(pos,pos);}catch(e){}}};
+  Array.prototype.forEach.call(app.querySelectorAll("[data-sort]"),function(th){th.onclick=function(){var c=th.getAttribute("data-sort");if(ui.sort===c)ui.sortdir=-ui.sortdir;else{ui.sort=c;ui.sortdir=1;}render();};});
+  var ua=app.querySelector("[data-uadd]");if(ua)ua.onclick=openUserForm;
+  Array.prototype.forEach.call(app.querySelectorAll("[data-utoggle]"),function(b){b.onclick=function(){var id=b.getAttribute("data-utoggle");var u=DB.users.find(function(x){return x.id===id;});fdb.collection("users").doc(id).update({active:!(u.active!==false)}).then(function(){logAudit("update","users",{name:(u.active!==false?"إيقاف ":"تفعيل ")+u.name});}).catch(function(e){alert("خطأ: "+e.message);});};});
+  var bk=app.querySelector("[data-backup]");if(bk)bk.onclick=doBackup;
+}
+document.addEventListener("click",function(e){if(ui.qaOpen&&session&&!e.target.closest(".qa")){ui.qaOpen=false;render();}});
+
+/* تشغيل */
+(function(){
+  try{
+    if(typeof firebase!=="undefined"&&firebaseConfig.apiKey.indexOf("PASTE")===-1){
+      firebase.initializeApp(firebaseConfig);auth=firebase.auth();fdb=firebase.firestore();
+      try{fdb.enablePersistence({synchronizeTabs:true}).catch(function(){});}catch(e){}
+      initAuth();
+    }else{render();}
+  }catch(e){console.error(e);render();}
+})();
+</script>
